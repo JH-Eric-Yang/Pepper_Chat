@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(E:\\Project\\Robot\\naoqi_sdk/**)",
+      "WebSearch",
+      "Bash(python test:*)",
+      "Read(E:\\Project\\Robot\\NAOChat/**)",
+      "Read(E:\\Project\\Robot\\NAOChat\\src\\NAO/**)",
+      "Read(E:\\Project\\Robot\\NAOChat\\src\\NAO/**)",
+      "Bash(python:*)",
+      "Read(E:\\Project\\Robot\\naoqi_sdk/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

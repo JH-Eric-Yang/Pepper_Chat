@@ -1,0 +1,22 @@
+# Pepper Robot Voice Interaction System - Python 3 Dependencies
+
+# OpenAI and Whisper
+openai>=1.0.0
+
+# Audio processing and speech detection
+pyaudio>=0.2.11
+numpy>=1.21.0
+wave>=0.0.2
+torch>=1.9.0
+torchaudio>=0.9.0
+silero-vad>=3.1.0
+
+# General utilities
+pathlib2>=2.3.7
+
+# Optional: For better audio handling
+scipy>=1.7.0
+
+# Development and debugging (optional)
+# pytest>=7.0.0
+# pylint>=2.15.0

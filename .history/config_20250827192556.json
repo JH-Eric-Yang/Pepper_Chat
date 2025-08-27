@@ -1,0 +1,40 @@
+{
+  "robot": {
+    "ip": "172.20.10.14",
+    "port": 9559,
+    "connection_timeout": 10
+  },
+  "openai": {
+    "api_key": "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",
+    "model": "GPT-5 nano
+",
+    "max_tokens": 150,
+    "temperature": 0.3,
+    "system_prompt": "You are Pepper, a friendly humanoid robot assistant. Keep responses concise and engaging, suitable for speech synthesis. Limit responses to 1-2 sentences."
+  },
+  "audio": {
+    "sample_rate": 16000,
+    "chunk_size": 1024,
+    "channels": 1,
+    "format": "paInt16",
+    "record_seconds": 10,
+    "silence_threshold": 500,
+    "silence_duration": 2.0,
+    "min_recording_duration": 0.5
+  },
+  "speech": {
+    "default_language": "English",
+    "volume": 0.8,
+    "speed": 1.0
+  },
+  "behavior": {
+    "default_posture": "Stand",
+    "eye_color_on_listening": "blue",
+    "eye_color_on_speaking": "green",
+    "eye_color_default": "white"
+  },
+  "paths": {
+    "python2_executable": "E:\\Project\\Robot\\Python27\\python.exe",
+    "naoqi_sdk_path": "E:\\Project\\Robot\\naoqi_sdk\\lib"
+  }
+}
