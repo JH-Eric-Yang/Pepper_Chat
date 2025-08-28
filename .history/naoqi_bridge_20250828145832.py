@@ -337,6 +337,7 @@ class PepperBridge:
         
         try:
             # Disable input by setting the microphone gain to 0
+            self.audio_device.setOutputVolume(0)  
             self.audio_device.setParameter("MicOn", 0)
             self.microphones_disabled = True
             return True

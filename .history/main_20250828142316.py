@@ -73,7 +73,6 @@ class AudioRecorder:
         self.audio = pyaudio.PyAudio()
         self.stream = None
         self.is_recording = False
-        self.is_muted = True  # Microphone is muted by default
         self.audio_queue = queue.Queue()
         self.preferred_device_id = self._find_dji_mic_mini()
         
@@ -386,14 +385,6 @@ class NAOqiBridge:
             
             if self.process.poll() is None:
                 print("NAOqi bridge started successfully")
-                
-                # Disable robot microphones immediately after bridge starts
-                print("Disabling robot microphones...")
-                if self.disable_robot_microphones():
-                    print("Robot microphones disabled successfully")
-                else:
-                    print("Warning: Failed to disable robot microphones")
-                
                 return True
             else:
                 error = self.process.stderr.read()
@@ -482,30 +473,6 @@ class NAOqiBridge:
         
         logging.warning("Speech completion wait timed out")
         return False
-    
-    def disable_robot_microphones(self) -> bool:
-        """Disable robot's microphones to prevent feedback"""
-        command = {"action": "disable_microphones"}
-        response = self.send_command(command)
-        if response and response.get("success", False):
-            print("Robot microphones disabled successfully")
-            return True
-        else:
-            error_msg = response.get("error", "Unknown error") if response else "No response from bridge"
-            logging.error(f"Failed to disable robot microphones: {error_msg}")
-            return False
-    
-    def enable_robot_microphones(self) -> bool:
-        """Enable robot's microphones"""
-        command = {"action": "enable_microphones"}
-        response = self.send_command(command)
-        if response and response.get("success", False):
-            print("Robot microphones enabled successfully")
-            return True
-        else:
-            error_msg = response.get("error", "Unknown error") if response else "No response from bridge"
-            logging.error(f"Failed to enable robot microphones: {error_msg}")
-            return False
     
     def speak(self, text: str, language: str = "English") -> bool:
         """Send text to robot for speech and wait for completion"""
