@@ -5,7 +5,7 @@
     "connection_timeout": 10
   },
   "openai": {
-    "api_key": "",
+    "api_key": "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",
     "model": "gpt-4o-mini",
     "max_completion_tokens": 350,
     "temperature": 1
@@ -67,7 +67,7 @@
     "eye_color_default": "white"
   },
   "paths": {
-    "python2_executable": "E:\\Project\\Robot\\Python27\\python.exe",
-    "naoqi_sdk_path": "E:\\Project\\Robot\\naoqi_sdk\\lib"
+    "python2_executable": "C:\\Python27\\python.exe",
+    "naoqi_sdk_path": "C:\\Users\\ericy\\Documents\\naoqi_sdk"
   }
 }

@@ -336,7 +336,7 @@ class PepperBridge:
             self.microphones_disabled = True
             return True
         except Exception as e:
-            print('Microphone disable error:')
+            print('Mic')
             print(e)
             return False
     
