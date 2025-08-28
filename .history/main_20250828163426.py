@@ -501,25 +501,6 @@ class NAOqiBridge:
         self.process = None
         self.python2_path = python2_path or r"E:\Project\Robot\Python27\python.exe"
         self.bridge_script = Path(__file__).parent / "naoqi_bridge.py"
-        self.output_thread = None
-        self.stderr_thread = None
-    
-    def _start_output_thread(self):
-        """Start background threads to display subprocess output"""
-        def read_stderr():
-            """Read and display stderr output from subprocess"""
-            if self.process and self.process.stderr:
-                try:
-                    while self.process.poll() is None:
-                        line = self.process.stderr.readline()
-                        if line:
-                            print(f"[NAOqi Bridge STDERR]: {line.strip()}")
-                except Exception:
-                    pass  # Thread cleanup
-        
-        # Start stderr monitoring thread
-        self.stderr_thread = threading.Thread(target=read_stderr, daemon=True)
-        self.stderr_thread.start()
         
     def start_bridge(self) -> bool:
         """Start the Python 2 NAOqi bridge subprocess"""
@@ -531,19 +512,15 @@ class NAOqiBridge:
                 str(self.robot_port)
             ]
             
-            # Create subprocess with stdout/stderr visible in main terminal for debugging
             self.process = subprocess.Popen(
                 cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,  # Keep stderr separate
+                stderr=subprocess.STDOUT,  # Merge stderr into stdout
                 text=True,
-                bufsize=0,  # Unbuffered for immediate output
+                bufsize=1,
                 universal_newlines=True
             )
-            
-            # Start background thread to display subprocess output
-            self._start_output_thread()
             
             # Wait for bridge to initialize (longer wait like test_bridge.py)
             time.sleep(3)
@@ -599,8 +576,8 @@ class NAOqiBridge:
                         logging.error(f"Invalid JSON response from bridge: '{response}' - {json_error}")
                         return {"success": False, "error": f"Invalid JSON response: {response}"}
                 else:
-                    # This is a debug/log line from bridge, display it
-                    print(f"[NAOqi Bridge]: {response}")
+                    # This is a log line, skip it and try the next line
+                    logging.debug(f"Skipping NAOqi log line: {response}")
                     continue
             
             logging.error(f"No valid JSON response found after {max_attempts} attempts")

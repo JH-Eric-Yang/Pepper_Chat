@@ -11,7 +11,7 @@
     "temperature": 1
   },
   "agents": {
-    "current_agent": "custom_assistant_example",
+    "current_agent": "friendly_science_communicator",
     "available_agents": {
       "friendly_science_communicator": {
         "type": "prompt",
@@ -52,8 +52,8 @@
       "custom_assistant_example": {
         "type": "assistant",
         "name": "Custom OpenAI Assistant",
-        "description": "IDSB AMBASSADOR",
-        "assistant_id": "asst_oIuNL9iirjmSTPRA6XTvagCG"
+        "description": "Example of how to configure an OpenAI Assistant agent - replace assistant_id with your actual ID",
+        "assistant_id": "asst_example123"
       }
     }
   },
@@ -65,7 +65,7 @@
     "record_seconds": 10,
     "silence_threshold": 500,
     "silence_duration": 4.0,
-    "min_recording_duration": 2.0
+    "min_recording_duration": 0.52.0
   },
   "speech": {
     "default_language": "English",

@@ -15,7 +15,6 @@ import logging
 from pathlib import Path
 from typing import Optional, Dict, Any
 from enum import Enum
-import re
 
 # Third-party imports (to be installed)
 try:
@@ -85,7 +84,7 @@ class AudioRecorder:
                 model=self.vad_model,
                 threshold=0.5,
                 sampling_rate=self.config["sample_rate"],
-                min_silence_duration_ms=1000,  # 0.5 second silence to end
+                min_silence_duration_ms=100,  # 0.5 second silence to end
                 speech_pad_ms=30  # 30ms padding around speech
             )
             print("Silero VAD initialized successfully")
@@ -408,14 +407,8 @@ class ChatGPTClient:
                 messages = self.client.beta.threads.messages.list(thread_id=thread.id)
                 reply = messages.data[0].content[0].text.value.strip()
                 agent_info = self.get_current_agent_info()
-                
-                if self._is_valid_english_response(reply):
-                    print(f"[{agent_info['name']}] Response: {reply}")
-                    return reply
-                else:
-                    fallback_response = "I don't understand what you mean. Can you say it again?"
-                    print(f"[{agent_info['name']}] Response (invalid replaced): {fallback_response}")
-                    return fallback_response
+                print(f"[{agent_info['name']}] Response: {reply}")
+                return reply
             else:
                 logging.error(f"Assistant run failed with status: {run.status}")
                 return None
@@ -440,56 +433,12 @@ class ChatGPTClient:
             )
             
             reply = response.choices[0].message.content.strip()
-            
-            if self._is_valid_english_response(reply):
-                print(f"[{agent_info['name']}] Response: {reply}")
-                return reply
-            else:
-                fallback_response = "I don't understand what you mean. Can you say it again?"
-                print(f"[{agent_info['name']}] Response (invalid replaced): {fallback_response}")
-                return fallback_response
+            print(f"[{agent_info['name']}] Response: {reply}")
+            return reply
             
         except Exception as e:
             logging.error(f"Prompt-based API error: {e}")
             return None
-    
-    def _is_valid_english_response(self, response: str) -> bool:
-        """Check if response is valid English and makes sense"""
-        if not response or not isinstance(response, str):
-            return False
-            
-        response = response.strip()
-        if not response:
-            return False
-            
-        # Check if response contains mostly non-ASCII characters (likely foreign language)
-        ascii_chars = sum(1 for c in response if ord(c) < 128)
-        if len(response) > 0 and ascii_chars / len(response) < 0.7:
-            return False
-            
-        # Check for common patterns that indicate invalid responses
-        invalid_patterns = [
-            r'^[^a-zA-Z]*$',  # No letters at all
-            r'^\s*[\d\.\-\+\*\/\=\(\)\[\]]+\s*$',  # Only math symbols/numbers
-            r'^[^\w\s]*$',  # Only special characters
-            r'^\s*$',  # Only whitespace
-        ]
-        
-        for pattern in invalid_patterns:
-            if re.match(pattern, response):
-                return False
-                
-        # Check if response has reasonable English word structure
-        words = re.findall(r'\b[a-zA-Z]+\b', response)
-        if len(words) == 0:
-            return False
-            
-        # Check for minimum word length (avoid gibberish)
-        valid_words = [word for word in words if len(word) >= 2]
-        if len(valid_words) == 0:
-            return False
-            
-        return True
 
 
 class NAOqiBridge:
@@ -501,25 +450,6 @@ class NAOqiBridge:
         self.process = None
         self.python2_path = python2_path or r"E:\Project\Robot\Python27\python.exe"
         self.bridge_script = Path(__file__).parent / "naoqi_bridge.py"
-        self.output_thread = None
-        self.stderr_thread = None
-    
-    def _start_output_thread(self):
-        """Start background threads to display subprocess output"""
-        def read_stderr():
-            """Read and display stderr output from subprocess"""
-            if self.process and self.process.stderr:
-                try:
-                    while self.process.poll() is None:
-                        line = self.process.stderr.readline()
-                        if line:
-                            print(f"[NAOqi Bridge STDERR]: {line.strip()}")
-                except Exception:
-                    pass  # Thread cleanup
-        
-        # Start stderr monitoring thread
-        self.stderr_thread = threading.Thread(target=read_stderr, daemon=True)
-        self.stderr_thread.start()
         
     def start_bridge(self) -> bool:
         """Start the Python 2 NAOqi bridge subprocess"""
@@ -531,19 +461,15 @@ class NAOqiBridge:
                 str(self.robot_port)
             ]
             
-            # Create subprocess with stdout/stderr visible in main terminal for debugging
             self.process = subprocess.Popen(
                 cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,  # Keep stderr separate
+                stderr=subprocess.STDOUT,  # Merge stderr into stdout
                 text=True,
-                bufsize=0,  # Unbuffered for immediate output
+                bufsize=1,
                 universal_newlines=True
             )
-            
-            # Start background thread to display subprocess output
-            self._start_output_thread()
             
             # Wait for bridge to initialize (longer wait like test_bridge.py)
             time.sleep(3)
@@ -599,8 +525,8 @@ class NAOqiBridge:
                         logging.error(f"Invalid JSON response from bridge: '{response}' - {json_error}")
                         return {"success": False, "error": f"Invalid JSON response: {response}"}
                 else:
-                    # This is a debug/log line from bridge, display it
-                    print(f"[NAOqi Bridge]: {response}")
+                    # This is a log line, skip it and try the next line
+                    logging.debug(f"Skipping NAOqi log line: {response}")
                     continue
             
             logging.error(f"No valid JSON response found after {max_attempts} attempts")
@@ -642,7 +568,7 @@ class NAOqiBridge:
         while time.time() - start_time < timeout:
             if not self.check_speaking_status():
                 return True
-            time.sleep(0.2)  # Check every 100ms
+            time.sleep(0.1)  # Check every 100ms
         
         logging.warning("Speech completion wait timed out")
         return False

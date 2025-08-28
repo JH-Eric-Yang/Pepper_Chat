@@ -1,6 +1,6 @@
-# Pepper Robot Voice Interaction System
+# Pepper Chat - Robot Voice Interaction System
 
-A complete voice interaction system for Pepper robot with multi-agent personality support that captures microphone input, processes it with Whisper speech recognition, sends it to ChatGPT for intelligent responses using configurable AI agents, and makes the robot speak using NAOqi text-to-speech.
+A complete voice interaction system for Pepper robot designed for educational outreach at the Bath Institute for Digital Security and Behaviour. The system captures microphone input, processes it with Whisper speech recognition, sends it to ChatGPT for intelligent responses using configurable AI agent personalities, and makes the robot speak using NAOqi text-to-speech.
 
 ## System Architecture
 
@@ -27,14 +27,14 @@ The system uses a **subprocess bridge architecture** with **multi-agent AI perso
 
 ### Software
 - Python 3.7+ (for main application)
-- Python 2.7 (for NAOqi bridge) - Located at `E:\Project\Robot\Python27\python.exe`
-- NAOqi SDK - Located at `E:\Project\Robot\naoqi_sdk`
+- Python 2.7 (for NAOqi bridge) - Located at `C:\Python27\python.exe`
+- NAOqi SDK - Located at `C:\Users\ericy\Documents\naoqi_sdk`
 
 ## Installation
 
 ### 1. Install Python 3 Dependencies
 ```bash
-cd E:\Project\Robot\Peper_development
+cd C:\Users\ericy\Documents\Pepper_Chat
 pip install -r requirements.txt
 ```
 
@@ -61,40 +61,51 @@ Edit `config.json` to set your Pepper robot's IP address:
 ```json
 {
   "robot": {
-    "ip": "192.168.1.100",
-    "port": 9559
+    "ip": "172.20.10.14",
+    "port": 9559,
+    "connection_timeout": 10
   }
 }
 ```
 
 ## Multi-Agent Personality System
 
-The system features **6 different AI agents** with unique personalities and communication styles:
+The system features **7 different AI agents** with unique personalities and communication styles tailored for educational outreach:
 
 ### Available Agents
 1. **Friendly Science Communicator** (default)
-   - Approachable, upbeat, and enthusiastic about technology
-   - Explains concepts in clear, everyday language with relatable examples
+   - Approachable, upbeat, and enthusiastic about digital security and behavior
+   - Explains concepts in clear, everyday language suitable for teenagers (ages 11-16)
+   - Keeps answers short and concise
 
 2. **Playful Storyteller**
    - Creative, witty, and dramatic in a fun way
-   - Turns information into short stories and "what if" adventures
+   - Turns information into short stories, scenarios, or "what if" adventures
+   - Uses humor and cliffhangers to keep attention
 
 3. **Curious Explorer**
    - Adventurous, curious, and collaborative
    - Works alongside students to figure things out together
+   - Encourages independent thinking and problem-solving
 
 4. **Digital Safety Guide**
    - Trustworthy, supportive, and practical
    - Helps with online safety, privacy, and digital citizenship
+   - Provides empowering advice without lecturing
 
 5. **Quiz Master**
    - Lively, energetic, and encouraging
-   - Loves asking quick quizzes and making learning feel like a game
+   - Loves asking quick quizzes, riddles, and challenges
+   - Makes learning feel like a game
 
 6. **Warm Mentor**
    - Calm, encouraging, and respectful
-   - Treats young people as capable learners and builds confidence
+   - Treats young people as capable learners
+   - Provides thoughtful, confidence-building answers
+
+7. **Custom Assistant** (OpenAI Assistant)
+   - IDSB AMBASSADOR
+   - Uses OpenAI Assistant API for specialized responses
 
 ### Agent Voice Commands
 - **"list agents"** - Show all available agents
@@ -211,7 +222,7 @@ The NAOqi bridge supports these commands:
 
 **Test NAOqi Bridge Only:**
 ```bash
-E:\Project\Robot\Python27\python.exe naoqi_bridge.py 192.168.1.100 9559
+C:\Python27\python.exe naoqi_bridge.py 172.20.10.14 9559
 ```
 
 Then send JSON commands via stdin:
@@ -225,33 +236,32 @@ Modify `main.py` to only test microphone input without other components.
 ## Project Structure
 
 ```
-E:\Project\Robot\Peper_development\
-├── main.py              # Python 3 main application with multi-agent system
-├── naoqi_bridge.py      # Python 2 NAOqi bridge for robot communication
-├── config.json          # Configuration file with agent definitions
-├── requirements.txt     # Python 3 dependencies
-├── agent_manager.py     # Agent management utilities
-├── agent_personality.md # Agent personality documentation
-├── diagnostic_test.py   # System diagnostic testing
-├── debug_tts.py         # TTS debugging utilities
-├── simple_test.py       # Simple system testing
-├── test_bridge.py       # NAOqi bridge testing
-├── test_components.py   # Component testing utilities
-└── README.md           # This documentation
+C:\Users\ericy\Documents\Pepper_Chat\
+├── main.py                      # Python 3 main application with multi-agent system
+├── naoqi_bridge.py             # Python 2 NAOqi bridge for robot communication
+├── config.json                 # Configuration file with agent definitions
+├── requirements.txt            # Python 3 dependencies
+├── agent_manager.py            # Agent management utilities
+├── agent_personality.md        # Agent personality documentation
+├── microphone_control.py       # Microphone input handling
+├── test_bridge.py              # NAOqi bridge testing
+├── test_microphone_control.py  # Microphone testing utilities
+└── README.md                   # This documentation
 
-E:\Project\Robot\Python27\    # Python 2.7 installation
-E:\Project\Robot\naoqi_sdk\   # NAOqi SDK
+C:\Python27\                    # Python 2.7 installation
+C:\Users\ericy\Documents\naoqi_sdk\   # NAOqi SDK
 ```
 
 ## Development Notes
 
 - The system uses subprocess communication with JSON messages
 - Advanced speech detection using Silero VAD with volume-based fallback
-- Multi-agent personality system with 6 configurable AI agents
+- Multi-agent personality system with 7 configurable AI agents tailored for educational outreach
 - Robot responses are limited to 350 tokens for natural speech
 - Error handling includes automatic retries and graceful degradation
 - Agent switching is persistent across sessions via config.json
-- Support for both DJI MIC MINI and default audio devices
+- Designed specifically for Bath Institute for Digital Security and Behaviour educational events
+- Target audience: Students aged 11-16 at Programming & Digital Careers Taster Day
 
 ## License
 
