@@ -11,7 +11,7 @@
     "temperature": 1
   },
   "agents": {
-    "current_agent": "custom_assistant_example",
+    "current_agent": "friendly_science_communicator",
     "available_agents": {
       "friendly_science_communicator": {
         "type": "prompt",
@@ -52,7 +52,7 @@
       "custom_assistant_example": {
         "type": "assistant",
         "name": "Custom OpenAI Assistant",
-        "description": "IDSB AMBASSADOR",
+        "description": "IDSB AMB",
         "assistant_id": "asst_oIuNL9iirjmSTPRA6XTvagCG"
       }
     }

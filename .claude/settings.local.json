@@ -8,7 +8,8 @@
       "Read(E:\\Project\\Robot\\NAOChat\\src\\NAO/**)",
       "Read(E:\\Project\\Robot\\NAOChat\\src\\NAO/**)",
       "Bash(python:*)",
-      "Read(E:\\Project\\Robot\\naoqi_sdk/**)"
+      "Read(E:\\Project\\Robot\\naoqi_sdk/**)",
+      "Bash(C:Python27python.exe naoqi_bridge.py 172.20.10.14 9559)"
     ],
     "deny": [],
     "ask": []

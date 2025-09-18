@@ -11,7 +11,7 @@
     "temperature": 1
   },
   "agents": {
-    "current_agent": "custom_assistant_example",
+    "current_agent": "friendly_science_communicator",
     "available_agents": {
       "friendly_science_communicator": {
         "type": "prompt",

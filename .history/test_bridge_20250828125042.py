@@ -44,7 +44,7 @@ def test_bridge_tts():
     
     # Start the bridge
     cmd = [
-        r"C:\Python27\python.exe",
+        r"CE:\Project\Robot\Python27\python.exe",
         "naoqi_bridge.py",
         "172.20.10.14",
         "9559"

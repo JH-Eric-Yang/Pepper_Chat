@@ -39,10 +39,16 @@ def list_agents(config: Dict[str, Any]):
     print("=" * 60)
     for key, agent in available_agents.items():
         marker = " [CURRENT]" if key == current_agent else ""
-        print(f"\n{key}{marker}")
+        agent_type = agent.get("type", "prompt")
+        type_indicator = f"({agent_type.upper()})"
+        print(f"\n{key} {type_indicator}{marker}")
         print(f"  Name: {agent['name']}")
         print(f"  Description: {agent['description']}")
-        print(f"  System Prompt: {agent['system_prompt'][:100]}...")
+        
+        if agent_type == "prompt":
+            print(f"  System Prompt: {agent['system_prompt'][:100]}...")
+        elif agent_type == "assistant":
+            print(f"  Assistant ID: {agent.get('assistant_id', 'N/A')}")
 
 def switch_agent(config: Dict[str, Any], agent_key: str):
     """Switch to a different agent"""
@@ -65,10 +71,15 @@ def show_current(config: Dict[str, Any]):
     
     if current_agent in available_agents:
         agent = available_agents[current_agent]
-        print(f"\nCurrent Agent: {current_agent}")
+        agent_type = agent.get("type", "prompt")
+        print(f"\nCurrent Agent: {current_agent} ({agent_type.upper()})")
         print(f"Name: {agent['name']}")
         print(f"Description: {agent['description']}")
-        print(f"System Prompt:\n{agent['system_prompt']}")
+        
+        if agent_type == "prompt":
+            print(f"System Prompt:\n{agent['system_prompt']}")
+        elif agent_type == "assistant":
+            print(f"Assistant ID: {agent.get('assistant_id', 'N/A')}")
     else:
         print(f"Current agent '{current_agent}' not found in available agents")
 
@@ -78,7 +89,7 @@ def interactive_menu(config: Dict[str, Any]):
         print("\n" + "="*50)
         print("Pepper Agent Manager")
         print("="*50)
-        print("1. List all agents")
+        print("1. List all available agents")
         print("2. Switch agent")
         print("3. Show current agent")
         print("4. Exit")
@@ -129,7 +140,7 @@ def interactive_menu(config: Dict[str, Any]):
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(description="Pepper Robot Agent Manager")
-    parser.add_argument("--list", action="store_true", help="List all available agents")
+    parser.add_argument("--list", action="store_true", help="List all available agents (prompt-based and assistant)")
     parser.add_argument("--switch", metavar="AGENT_KEY", help="Switch to specified agent")
     parser.add_argument("--current", action="store_true", help="Show current agent information")
     parser.add_argument("--interactive", action="store_true", help="Launch interactive menu")

@@ -69,7 +69,6 @@ class PepperBridge:
             # Initialize audio device proxy
             try:
                 self.audio_device = ALProxy("ALAudioDevice", self.robot_ip, self.robot_port)
-                self.audio_device.stopMicrophonesRecording()  # Ensure microphones are stopped initially
             except Exception as audio_ex:
                 self.audio_device = None
             
@@ -134,7 +133,7 @@ class PepperBridge:
             
             # Set speech parameters for NAOqi 2.5
             try:
-                self.tts.setParameter("speed", 80)  # Normal speed for NAOqi 2.5
+                self.tts.setParameter("speed", 100)  # Normal speed for NAOqi 2.5
                 self.tts.setParameter("pitchShift", 1.0)  # Normal pitch
             except Exception:
                 pass
@@ -272,8 +271,6 @@ class PepperBridge:
             if self.animated_speech and not speech_success:
                 try:
                     # Use ALAnimatedSpeech for better speech quality in NAOqi 2.5
-                    sys.stderr.write('Using ALAnimatedSpeech for speech output...\n')
-                    sys.stderr.flush()
                     self.animated_speech.say(clean_text)
                     speech_success = True
                 except Exception as anim_error:
@@ -282,8 +279,6 @@ class PepperBridge:
             # Method 2: Fallback to regular TTS if AnimatedSpeech failed
             if not speech_success:
                 try:
-                    sys.stderr.write('Using ALTextToSpeech for speech output...\n')
-                    sys.stderr.flush()
                     self.tts.say(clean_text)
                     speech_success = True
                 except Exception as tts_error:
@@ -342,15 +337,13 @@ class PepperBridge:
         
         try:
             # Disable input by setting the microphone gain to 0
-            sys.stderr.write('Disabling microphones...\n')
-            sys.stderr.flush()
-            self.audio_device.stopMicrophonesRecording()
+            self.audio_device.setOutputVolume(0)  
+            self.audio_device.setParameter("MicOn", 0)
             self.microphones_disabled = True
             return True
         except Exception as e:
-            sys.stderr.write('Microphone disable error:\n')
-            sys.stderr.write(str(e) + '\n')
-            sys.stderr.flush()
+            print('Microphone disable error:')
+            print(e)
             return False
     
     def enable_robot_microphones(self):
@@ -360,10 +353,10 @@ class PepperBridge:
         
         try:
             # Re-enable microphones by restoring volume and mic parameter
-            sys.stderr.write('Enabling microphones...\n')
-            sys.stderr.flush()
+            print('Enabling microphones...')
             self.audio_device.enableAudioOut(True)
             self.audio_device.setOutputVolume(95)  
+            self.audio_device.setParameter("MicOn", 1)
             self.microphones_disabled = False
             return True
         except Exception as e:

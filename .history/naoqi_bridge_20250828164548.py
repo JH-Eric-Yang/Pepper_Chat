@@ -362,8 +362,10 @@ class PepperBridge:
             # Re-enable microphones by restoring volume and mic parameter
             sys.stderr.write('Enabling microphones...\n')
             sys.stderr.flush()
+            self.audio_device.startMicrophonesRecording()
             self.audio_device.enableAudioOut(True)
             self.audio_device.setOutputVolume(95)  
+            self.audio_device.setParameter("MicOn", 1)
             self.microphones_disabled = False
             return True
         except Exception as e:

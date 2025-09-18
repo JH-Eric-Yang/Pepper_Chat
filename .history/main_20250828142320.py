@@ -15,7 +15,6 @@ import logging
 from pathlib import Path
 from typing import Optional, Dict, Any
 from enum import Enum
-import re
 
 # Third-party imports (to be installed)
 try:
@@ -74,7 +73,6 @@ class AudioRecorder:
         self.audio = pyaudio.PyAudio()
         self.stream = None
         self.is_recording = False
-        self.is_muted = True  # Microphone is muted by default
         self.audio_queue = queue.Queue()
         self.preferred_device_id = self._find_dji_mic_mini()
         
@@ -85,7 +83,7 @@ class AudioRecorder:
                 model=self.vad_model,
                 threshold=0.5,
                 sampling_rate=self.config["sample_rate"],
-                min_silence_duration_ms=1000,  # 0.5 second silence to end
+                min_silence_duration_ms=500,  # 0.5 second silence to end
                 speech_pad_ms=30  # 30ms padding around speech
             )
             print("Silero VAD initialized successfully")
@@ -179,17 +177,9 @@ class AudioRecorder:
         """Stop recording audio"""
         self.is_recording = False
         if self.stream:
-            try:
-                self.stream.stop_stream()
-                self.stream.close()
-            except Exception as e:
-                print(f"Warning: Error stopping stream: {e}")
+            self.stream.stop_stream()
+            self.stream.close()
             self.stream = None
-    
-    def force_stop_recording(self):
-        """Force stop recording immediately - used when robot starts speaking"""
-        print("Forcing microphone recording to stop...")
-        self.stop_recording()
     
     def record_audio(self) -> Optional[str]:
         """Record audio until silence is detected and save to temporary WAV file"""
@@ -315,18 +305,6 @@ class ChatGPTClient:
             self.current_agent = first_agent
             return self.available_agents[first_agent]
     
-    def is_current_agent_assistant(self) -> bool:
-        """Check if current agent is an OpenAI assistant"""
-        agent_info = self.get_current_agent_info()
-        return agent_info.get("type") == "assistant"
-    
-    def get_current_assistant_id(self) -> Optional[str]:
-        """Get current assistant ID if current agent is an assistant"""
-        if self.is_current_agent_assistant():
-            agent_info = self.get_current_agent_info()
-            return agent_info.get("assistant_id")
-        return None
-    
     def switch_agent(self, agent_key: str) -> bool:
         """Switch to a different agent"""
         if agent_key in self.available_agents:
@@ -344,88 +322,12 @@ class ChatGPTClient:
         print("-" * 50)
         for key, agent in self.available_agents.items():
             marker = " [CURRENT]" if key == self.current_agent else ""
-            agent_type = agent.get("type", "prompt")
-            type_indicator = f"({agent_type.upper()})" 
-            print(f"{key}: {agent['name']} {type_indicator}{marker}")
+            print(f"{key}: {agent['name']}{marker}")
             print(f"  Description: {agent['description']}")
-            if agent_type == "assistant":
-                print(f"  Assistant ID: {agent.get('assistant_id', 'N/A')}")
             print()
     
-    def connect_to_existing_assistant(self, assistant_id: str) -> bool:
-        """Connect to an existing OpenAI assistant by ID"""
-        try:
-            assistant = self.client.beta.assistants.retrieve(assistant_id)
-            print(f"Connected to assistant: {assistant.name} (ID: {assistant_id})")
-            self.assistant_id = assistant_id
-            self.use_assistant_api = True
-            return True
-        except Exception as e:
-            logging.error(f"Failed to connect to assistant {assistant_id}: {e}")
-            return False
-    
     def get_response(self, user_input: str) -> Optional[str]:
-        """Get response from ChatGPT using current agent (prompt-based or assistant)"""
-        try:
-            if self.is_current_agent_assistant():
-                assistant_id = self.get_current_assistant_id()
-                if assistant_id:
-                    return self._get_assistant_response(user_input, assistant_id)
-                else:
-                    logging.error("Assistant agent selected but no assistant_id provided")
-                    return "Sorry, assistant configuration is missing."
-            else:
-                return self._get_prompt_based_response(user_input)
-            
-        except Exception as e:
-            logging.error(f"ChatGPT API error: {e}")
-            return "Sorry, I'm having trouble understanding right now."
-    
-    def _get_assistant_response(self, user_input: str, assistant_id: str) -> Optional[str]:
-        """Get response using OpenAI Assistant API"""
-        try:
-            thread = self.client.beta.threads.create()
-            
-            self.client.beta.threads.messages.create(
-                thread_id=thread.id,
-                role="user",
-                content=user_input
-            )
-            
-            run = self.client.beta.threads.runs.create(
-                thread_id=thread.id,
-                assistant_id=assistant_id
-            )
-            
-            while run.status in ['queued', 'in_progress']:
-                time.sleep(0.5)
-                run = self.client.beta.threads.runs.retrieve(
-                    thread_id=thread.id,
-                    run_id=run.id
-                )
-            
-            if run.status == 'completed':
-                messages = self.client.beta.threads.messages.list(thread_id=thread.id)
-                reply = messages.data[0].content[0].text.value.strip()
-                agent_info = self.get_current_agent_info()
-                
-                if self._is_valid_english_response(reply):
-                    print(f"[{agent_info['name']}] Response: {reply}")
-                    return reply
-                else:
-                    fallback_response = "I don't understand what you mean. Can you say it again?"
-                    print(f"[{agent_info['name']}] Response (invalid replaced): {fallback_response}")
-                    return fallback_response
-            else:
-                logging.error(f"Assistant run failed with status: {run.status}")
-                return None
-                
-        except Exception as e:
-            logging.error(f"Assistant API error: {e}")
-            return None
-    
-    def _get_prompt_based_response(self, user_input: str) -> Optional[str]:
-        """Get response using traditional prompt-based approach"""
+        """Get response from ChatGPT using current agent"""
         try:
             agent_info = self.get_current_agent_info()
             
@@ -440,56 +342,12 @@ class ChatGPTClient:
             )
             
             reply = response.choices[0].message.content.strip()
-            
-            if self._is_valid_english_response(reply):
-                print(f"[{agent_info['name']}] Response: {reply}")
-                return reply
-            else:
-                fallback_response = "I don't understand what you mean. Can you say it again?"
-                print(f"[{agent_info['name']}] Response (invalid replaced): {fallback_response}")
-                return fallback_response
+            print(f"[{agent_info['name']}] Response: {reply}")
+            return reply
             
         except Exception as e:
-            logging.error(f"Prompt-based API error: {e}")
-            return None
-    
-    def _is_valid_english_response(self, response: str) -> bool:
-        """Check if response is valid English and makes sense"""
-        if not response or not isinstance(response, str):
-            return False
-            
-        response = response.strip()
-        if not response:
-            return False
-            
-        # Check if response contains mostly non-ASCII characters (likely foreign language)
-        ascii_chars = sum(1 for c in response if ord(c) < 128)
-        if len(response) > 0 and ascii_chars / len(response) < 0.7:
-            return False
-            
-        # Check for common patterns that indicate invalid responses
-        invalid_patterns = [
-            r'^[^a-zA-Z]*$',  # No letters at all
-            r'^\s*[\d\.\-\+\*\/\=\(\)\[\]]+\s*$',  # Only math symbols/numbers
-            r'^[^\w\s]*$',  # Only special characters
-            r'^\s*$',  # Only whitespace
-        ]
-        
-        for pattern in invalid_patterns:
-            if re.match(pattern, response):
-                return False
-                
-        # Check if response has reasonable English word structure
-        words = re.findall(r'\b[a-zA-Z]+\b', response)
-        if len(words) == 0:
-            return False
-            
-        # Check for minimum word length (avoid gibberish)
-        valid_words = [word for word in words if len(word) >= 2]
-        if len(valid_words) == 0:
-            return False
-            
-        return True
+            logging.error(f"ChatGPT API error: {e}")
+            return "Sorry, I'm having trouble understanding right now."
 
 
 class NAOqiBridge:
@@ -501,25 +359,6 @@ class NAOqiBridge:
         self.process = None
         self.python2_path = python2_path or r"E:\Project\Robot\Python27\python.exe"
         self.bridge_script = Path(__file__).parent / "naoqi_bridge.py"
-        self.output_thread = None
-        self.stderr_thread = None
-    
-    def _start_output_thread(self):
-        """Start background threads to display subprocess output"""
-        def read_stderr():
-            """Read and display stderr output from subprocess"""
-            if self.process and self.process.stderr:
-                try:
-                    while self.process.poll() is None:
-                        line = self.process.stderr.readline()
-                        if line:
-                            print(f"[NAOqi Bridge STDERR]: {line.strip()}")
-                except Exception:
-                    pass  # Thread cleanup
-        
-        # Start stderr monitoring thread
-        self.stderr_thread = threading.Thread(target=read_stderr, daemon=True)
-        self.stderr_thread.start()
         
     def start_bridge(self) -> bool:
         """Start the Python 2 NAOqi bridge subprocess"""
@@ -531,33 +370,21 @@ class NAOqiBridge:
                 str(self.robot_port)
             ]
             
-            # Create subprocess with stdout/stderr visible in main terminal for debugging
             self.process = subprocess.Popen(
                 cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,  # Keep stderr separate
+                stderr=subprocess.STDOUT,  # Merge stderr into stdout
                 text=True,
-                bufsize=0,  # Unbuffered for immediate output
+                bufsize=1,
                 universal_newlines=True
             )
-            
-            # Start background thread to display subprocess output
-            self._start_output_thread()
             
             # Wait for bridge to initialize (longer wait like test_bridge.py)
             time.sleep(3)
             
             if self.process.poll() is None:
                 print("NAOqi bridge started successfully")
-                
-                # Disable robot microphones immediately after bridge starts
-                print("Disabling robot microphones...")
-                if self.disable_robot_microphones():
-                    print("Robot microphones disabled successfully")
-                else:
-                    print("Warning: Failed to disable robot microphones")
-                
                 return True
             else:
                 error = self.process.stderr.read()
@@ -599,8 +426,8 @@ class NAOqiBridge:
                         logging.error(f"Invalid JSON response from bridge: '{response}' - {json_error}")
                         return {"success": False, "error": f"Invalid JSON response: {response}"}
                 else:
-                    # This is a debug/log line from bridge, display it
-                    print(f"[NAOqi Bridge]: {response}")
+                    # This is a log line, skip it and try the next line
+                    logging.debug(f"Skipping NAOqi log line: {response}")
                     continue
             
             logging.error(f"No valid JSON response found after {max_attempts} attempts")
@@ -642,34 +469,10 @@ class NAOqiBridge:
         while time.time() - start_time < timeout:
             if not self.check_speaking_status():
                 return True
-            time.sleep(0.2)  # Check every 100ms
+            time.sleep(0.1)  # Check every 100ms
         
         logging.warning("Speech completion wait timed out")
         return False
-    
-    def disable_robot_microphones(self) -> bool:
-        """Disable robot's microphones to prevent feedback"""
-        command = {"action": "disable_microphones"}
-        response = self.send_command(command)
-        if response and response.get("success", False):
-            print("Robot microphones disabled successfully")
-            return True
-        else:
-            error_msg = response.get("error", "Unknown error") if response else "No response from bridge"
-            logging.error(f"Failed to disable robot microphones: {error_msg}")
-            return False
-    
-    def enable_robot_microphones(self) -> bool:
-        """Enable robot's microphones"""
-        command = {"action": "enable_microphones"}
-        response = self.send_command(command)
-        if response and response.get("success", False):
-            print("Robot microphones enabled successfully")
-            return True
-        else:
-            error_msg = response.get("error", "Unknown error") if response else "No response from bridge"
-            logging.error(f"Failed to enable robot microphones: {error_msg}")
-            return False
     
     def speak(self, text: str, language: str = "English") -> bool:
         """Send text to robot for speech and wait for completion"""
@@ -728,20 +531,18 @@ class VoiceInteractionSystem:
             self.config["paths"]["python2_executable"]
         )
         
-        
         self.running = False
         self.state = SystemState.IDLE
         self.state_lock = threading.Lock()
     
     def switch_agent(self, agent_key: str) -> bool:
-        """Switch to a different agent (prompt-based or assistant) and update config"""
+        """Switch to a different agent and update config"""
         if self.chatgpt.switch_agent(agent_key):
             self.config["agents"]["current_agent"] = agent_key
             # Save updated config
             self.save_config()
             return True
         return False
-    
     
     def list_agents(self):
         """List all available agents"""
@@ -775,10 +576,7 @@ class VoiceInteractionSystem:
         # Current agent command
         elif "current agent" in user_text_lower or "which agent" in user_text_lower:
             agent_info = self.chatgpt.get_current_agent_info()
-            agent_type = agent_info.get("type", "prompt")
-            print(f"Current agent: {agent_info['name']} ({agent_type.upper()}) - {agent_info['description']}")
-            if agent_type == "assistant":
-                print(f"Assistant ID: {agent_info.get('assistant_id', 'N/A')}")
+            print(f"Current agent: {agent_info['name']} - {agent_info['description']}")
             return True
         
         return False
@@ -804,16 +602,11 @@ class VoiceInteractionSystem:
         if not self.recorder.start_recording():
             return None
         
-        try:
-            # Use VAD if available, otherwise fallback to volume detection
-            if self.recorder.vad_iterator:
-                return self._vad_speech_detection()
-            else:
-                return self._volume_speech_detection()
-        finally:
-            # Ensure recording is always stopped when exiting this method
-            if self.recorder.is_recording:
-                self.recorder.stop_recording()
+        # Use VAD if available, otherwise fallback to volume detection
+        if self.recorder.vad_iterator:
+            return self._vad_speech_detection()
+        else:
+            return self._volume_speech_detection()
     
     def _vad_speech_detection(self) -> Optional[str]:
         """Speech detection using Silero VAD"""
@@ -826,11 +619,6 @@ class VoiceInteractionSystem:
         
         try:
             while self.recorder.is_recording and self.get_state() == SystemState.LISTENING:
-                # Check if robot started speaking and break immediately
-                if self.get_state() != SystemState.LISTENING:
-                    print("Recording stopped: robot is speaking")
-                    break
-                    
                 data = self.recorder.stream.read(self.config["audio"]["chunk_size"])
                 
                 # Convert to int16 and add to buffer
@@ -893,11 +681,6 @@ class VoiceInteractionSystem:
         
         try:
             while self.recorder.is_recording and self.get_state() == SystemState.LISTENING:
-                # Check if robot started speaking and break immediately
-                if self.get_state() != SystemState.LISTENING:
-                    print("Recording stopped: robot is speaking")
-                    break
-                    
                 data = self.recorder.stream.read(self.config["audio"]["chunk_size"])
                 
                 # Check for speech
@@ -963,15 +746,11 @@ class VoiceInteractionSystem:
         
         # Show current agent information
         agent_info = self.chatgpt.get_current_agent_info()
-        agent_type = agent_info.get("type", "prompt")
-        print(f"\nCurrent Agent: {agent_info['name']} ({agent_type.upper()})")
+        print(f"\nCurrent Agent: {agent_info['name']}")
         print(f"Description: {agent_info['description']}")
-        if agent_type == "assistant":
-            print(f"Assistant ID: {agent_info.get('assistant_id', 'N/A')}")
-        
         print(f"\nVoice Commands:")
-        print("- 'list agents' - Show all available agents (prompt-based and assistants)")
-        print("- 'switch to [agent_name]' - Change to any configured agent")
+        print("- 'list agents' - Show available agents")
+        print("- 'switch to [agent_name]' - Change agent")
         print("- 'current agent' - Show current agent info")
         print("-" * 50)
         
@@ -1014,9 +793,6 @@ class VoiceInteractionSystem:
                                 robot_response = self.chatgpt.get_response(user_text)
                                 if robot_response:
                                     self.set_state(SystemState.SPEAKING)
-                                    
-                                    # Force stop any ongoing recording when robot starts speaking
-                                    self.recorder.force_stop_recording()
                                     
                                     # Send to robot for speech
                                     print("Robot speaking...")
