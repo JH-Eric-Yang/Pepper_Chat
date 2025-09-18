@@ -27,14 +27,13 @@ The system uses a **subprocess bridge architecture** with **multi-agent AI perso
 
 ### Software
 - Python 3.7+ (for main application)
-- Python 2.7 (for NAOqi bridge) - Located at `C:\Python27\python.exe`
-- NAOqi SDK - Located at `C:\Users\ericy\Documents\naoqi_sdk`
+- Python 2.7 (for NAOqi bridge)
+- NAOqi SDK`
 
 ## Installation
 
 ### 1. Install Python 3 Dependencies
 ```bash
-cd C:\Users\ericy\Documents\Pepper_Chat
 pip install -r requirements.txt
 ```
 
@@ -199,8 +198,8 @@ The NAOqi bridge supports these commands:
 ### Common Issues
 
 **1. NAOqi Bridge Fails to Start**
-- Check Python 2.7 path in `config.json`
-- Verify NAOqi SDK is installed at specified path
+- Check Python 2.7 installation
+- Verify NAOqi SDK is installed and accessible
 - Ensure robot IP is correct and accessible
 
 **2. Audio Recording Issues**
@@ -222,7 +221,7 @@ The NAOqi bridge supports these commands:
 
 **Test NAOqi Bridge Only:**
 ```bash
-C:\Python27\python.exe naoqi_bridge.py 172.20.10.14 9559
+python naoqi_bridge.py <robot_ip> 9559
 ```
 
 Then send JSON commands via stdin:
@@ -236,7 +235,6 @@ Modify `main.py` to only test microphone input without other components.
 ## Project Structure
 
 ```
-C:\Users\ericy\Documents\Pepper_Chat\
 ├── main.py                      # Python 3 main application with multi-agent system
 ├── naoqi_bridge.py             # Python 2 NAOqi bridge for robot communication
 ├── config.json                 # Configuration file with agent definitions
@@ -247,9 +245,6 @@ C:\Users\ericy\Documents\Pepper_Chat\
 ├── test_bridge.py              # NAOqi bridge testing
 ├── test_microphone_control.py  # Microphone testing utilities
 └── README.md                   # This documentation
-
-C:\Python27\                    # Python 2.7 installation
-C:\Users\ericy\Documents\naoqi_sdk\   # NAOqi SDK
 ```
 
 ## Development Notes
